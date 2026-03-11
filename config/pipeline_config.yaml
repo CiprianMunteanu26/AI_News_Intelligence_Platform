@@ -1,0 +1,71 @@
+# =============================================================================
+# Pipeline Configuration — AI News Intelligence Platform
+# =============================================================================
+
+paths:
+  raw_data_dir: "data/raw"
+  processed_data_dir: "data/processed"
+  analysis_dir: "data/analysis"
+  checkpoints_dir: "checkpoints"
+  reports_dir: "reports"
+
+ingestion:
+  sources:
+    - type: "newsapi"
+      enabled: true
+      categories: ["technology", "business", "science"]
+      country: "us"
+      page_size: 50
+
+    - type: "rss"
+      enabled: true
+      feeds:
+        - "https://feeds.bbci.co.uk/news/world/rss.xml"
+        - "https://rss.nytimes.com/services/xml/rss/nyt/World.xml"
+        - "https://feeds.reuters.com/reuters/topNews"
+        - "https://www.theguardian.com/world/rss"
+
+preprocessing:
+  min_article_length: 100
+  max_article_length: 10000
+  dedup_similarity_threshold: 0.85
+  language: "en"
+
+training:
+  model_name: "mistralai/Mistral-7B-Instruct-v0.2"
+  use_lora: true
+  lora_r: 16
+  lora_alpha: 32
+  lora_dropout: 0.05
+  epochs: 3
+  batch_size: 4
+  gradient_accumulation_steps: 8
+  learning_rate: 0.0002
+  warmup_ratio: 0.1
+  max_seq_length: 2048
+  fp16: true
+
+inference:
+  batch_size: 8
+  max_new_tokens: 512
+  temperature: 0.3
+  tasks:
+    - "summarize"
+    - "sentiment"
+    - "impact"
+    - "entities"
+
+reporting:
+  top_n_articles: 20
+  sections:
+    - "Top Developments"
+    - "Key Signals"
+    - "Technology Highlights"
+    - "Market Signals"
+    - "Geopolitical Events"
+
+schedule:
+  collect_interval_hours: 1
+  preprocess_interval_hours: 3
+  inference_time: "06:00"
+  report_time: "07:00"
