@@ -67,4 +67,4 @@ if __name__ == "__main__":
         run_preprocessing(args.config)
     except Exception:
         logger.exception("Preprocessing pipeline failed")
-        exit(1)
+        sys.exit(1)

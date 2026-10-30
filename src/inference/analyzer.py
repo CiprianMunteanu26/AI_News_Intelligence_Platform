@@ -40,7 +40,7 @@ class NewsAnalyzer:
                 prompt = build_prompt(task, title, body)
                 response = self.engine.generate(prompt)
                 results["analysis"][task] = response
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001 — isolate task failures so the remaining analyses still run.
                 logger.error("Analysis task '%s' failed for '%s': %s", task, title, e)
                 results["analysis"][task] = f"Error: {e}"
 

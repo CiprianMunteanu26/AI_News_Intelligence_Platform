@@ -8,7 +8,7 @@ deduplicates by URL, and persists the results as a daily JSON file.
 from __future__ import annotations
 
 import json
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 from src.ingestion.base_source import Article, NewsSource
@@ -120,7 +120,7 @@ class NewsCollector:
     @staticmethod
     def _save(articles: list[Article], output_dir: Path) -> Path:
         """Save articles to a dated JSON file."""
-        date_str = datetime.utcnow().strftime("%Y-%m-%d")
+        date_str = datetime.now(UTC).strftime("%Y-%m-%d")
         filepath = output_dir / f"{date_str}_articles.json"
 
         data = [a.to_dict() for a in articles]

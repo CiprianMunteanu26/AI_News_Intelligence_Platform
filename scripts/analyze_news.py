@@ -10,7 +10,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 # Ensure project root is on sys.path
@@ -82,9 +82,7 @@ def run_analysis(config_path: str | None = None, limit: int | None = None, use_t
             logger.info("Progress: %d/%d", i + 1, num_articles)
 
     # 6. Save results
-    from datetime import timezone
-
-    date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d_%H%M%S")
+    date_str = datetime.now(UTC).strftime("%Y-%m-%d_%H%M%S")
     output_file = analysis_dir / f"intelligence_report_{date_str}.json"
 
     with open(output_file, "w", encoding="utf-8") as f:
@@ -105,4 +103,4 @@ if __name__ == "__main__":
         run_analysis(args.config, args.limit, args.tiny)
     except Exception:
         logger.exception("Analysis pipeline failed")
-        exit(1)
+        sys.exit(1)

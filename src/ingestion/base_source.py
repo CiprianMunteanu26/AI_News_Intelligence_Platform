@@ -10,7 +10,7 @@ from __future__ import annotations
 import hashlib
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 
@@ -25,7 +25,7 @@ class Article:
     published_at: str = ""
     author: str = ""
     metadata: dict[str, Any] = field(default_factory=dict)
-    fetched_at: str = field(default_factory=lambda: datetime.utcnow().isoformat())
+    fetched_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
 
     # ------------------------------------------------------------------
     # Helpers
