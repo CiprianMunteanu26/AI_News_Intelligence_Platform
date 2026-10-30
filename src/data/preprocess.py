@@ -10,7 +10,7 @@ from __future__ import annotations
 import re
 import unicodedata
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, FeatureNotFound
 
 from src.utils.logger import get_logger
 
@@ -43,7 +43,7 @@ class NewsPreprocessor:
         article["body"] = self.clean_text(article.get("body", ""))
 
         # Additional metadata cleaning if needed
-        if "author" in article and article["author"]:
+        if article.get("author"):
             article["author"] = self.clean_text(article["author"])
 
         return article
@@ -84,7 +84,7 @@ class NewsPreprocessor:
             # Use 'lxml' if available, otherwise fallback to 'html.parser'
             soup = BeautifulSoup(text, "html.parser")
             return soup.get_text(separator=" ")
-        except Exception as e:
+        except FeatureNotFound as e:
             logger.warning("HTML cleaning failed, falling back to regex: %s", e)
             # Simple regex fallback if BS fails
             return re.sub(r"<[^>]+>", "", text)

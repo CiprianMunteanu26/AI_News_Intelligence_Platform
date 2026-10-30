@@ -57,7 +57,7 @@ class NewsDataset:
                     all_articles.extend(content)
                 else:
                     logger.warning("File %s does not contain a list of articles", filepath)
-            except Exception as e:
+            except (OSError, UnicodeDecodeError, json.JSONDecodeError) as e:
                 logger.error("Failed to load %s: %s", filepath, e)
 
         if preprocessor:
@@ -68,7 +68,7 @@ class NewsDataset:
         if not all_articles:
             return cls(Dataset.from_dict({"title": [], "body": [], "url": [], "source": [], "published_at": []}))
 
-        data_dict = {key: [a.get(key, "") for a in all_articles] for key in all_articles[0].keys()}
+        data_dict = {key: [a.get(key, "") for a in all_articles] for key in all_articles[0]}
 
         return cls(Dataset.from_dict(data_dict))
 

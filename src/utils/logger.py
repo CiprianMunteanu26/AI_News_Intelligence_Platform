@@ -10,6 +10,7 @@ from __future__ import annotations
 import logging
 import sys
 from pathlib import Path
+from typing import ClassVar
 
 
 # ---------------------------------------------------------------------------
@@ -26,7 +27,7 @@ class _Colors:
     CYAN = "\033[96m"
     GRAY = "\033[90m"
 
-    LEVEL_MAP = {
+    LEVEL_MAP: ClassVar[dict[str, str]] = {
         "DEBUG": GRAY,
         "INFO": GREEN,
         "WARNING": YELLOW,
