@@ -72,7 +72,6 @@ class PreprocessingConfig:
 
 @dataclass
 class TrainingConfig:
-    model_name: str = "mistralai/Mistral-7B-Instruct-v0.2"
     use_lora: bool = True
     lora_r: int = 16
     lora_alpha: int = 32
@@ -88,9 +87,14 @@ class TrainingConfig:
 
 @dataclass
 class InferenceConfig:
+    runtime_url: str = "http://127.0.0.1:8080/v1"
     batch_size: int = 8
     max_new_tokens: int = 512
-    temperature: float = 0.3
+    temperature: float = 0.7
+    top_p: float = 0.8
+    presence_penalty: float = 1.5
+    timeout_seconds: int = 300
+    enable_thinking: bool = False
     tasks: list[str] = field(default_factory=lambda: ["summarize", "sentiment", "impact", "entities"])
 
 
@@ -170,10 +174,7 @@ class PlatformConfig:
             telegram_chat_id=os.getenv("TELEGRAM_CHAT_ID", ""),
         )
 
-        # Env override for model name
-        env_model = os.getenv("MODEL_NAME")
-        if env_model:
-            cfg.training.model_name = env_model
+        cfg.inference.runtime_url = os.getenv("BONSAI_RUNTIME_URL", cfg.inference.runtime_url)
 
         # Resolve & ensure paths
         cfg.paths.resolve(PROJECT_ROOT)

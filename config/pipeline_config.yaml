@@ -36,7 +36,6 @@ preprocessing:
   language: "en"
 
 training:
-  model_name: "mistralai/Mistral-7B-Instruct-v0.2"
   use_lora: true
   lora_r: 16
   lora_alpha: 32
@@ -50,9 +49,14 @@ training:
   fp16: true
 
 inference:
+  runtime_url: "http://127.0.0.1:8080/v1"
   batch_size: 8
   max_new_tokens: 512
-  temperature: 0.3
+  temperature: 0.7
+  top_p: 0.8
+  presence_penalty: 1.5
+  timeout_seconds: 300
+  enable_thinking: false
   tasks:
     - "summarize"
     - "sentiment"

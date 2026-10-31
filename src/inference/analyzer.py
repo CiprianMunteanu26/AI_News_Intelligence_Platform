@@ -6,8 +6,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from src.inference.engine import InferenceEngine
 from src.inference.prompts import build_prompt
+from src.inference.protocols import TextGenerator
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -18,7 +18,7 @@ class NewsAnalyzer:
     Orchestrates multiple analysis tasks for a news article.
     """
 
-    def __init__(self, engine: InferenceEngine, tasks: list[str] | None = None) -> None:
+    def __init__(self, engine: TextGenerator, tasks: list[str] | None = None) -> None:
         self.engine = engine
         self.tasks = tasks or ["summarize", "sentiment", "impact", "entities"]
 
@@ -35,14 +35,9 @@ class NewsAnalyzer:
         results: dict[str, Any] = {"title": title, "url": url, "analysis": {}}
 
         for task in self.tasks:
-            try:
-                logger.debug("Running task: %s", task)
-                prompt = build_prompt(task, title, body)
-                response = self.engine.generate(prompt)
-                results["analysis"][task] = response
-            except Exception as e:  # noqa: BLE001 — isolate task failures so the remaining analyses still run.
-                logger.error("Analysis task '%s' failed for '%s': %s", task, title, e)
-                results["analysis"][task] = f"Error: {e}"
+            logger.debug("Running task: %s", task)
+            prompt = build_prompt(task, title, body)
+            results["analysis"][task] = self.engine.generate(prompt)
 
         return results
 
