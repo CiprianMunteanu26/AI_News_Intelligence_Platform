@@ -24,10 +24,19 @@ jobs:
           python-version: "3.12"
 
       - name: Install Ruff
-        run: python -m pip install ruff==0.17.3
+        run: python -m pip install ruff==0.17.3 python-telegram-bot==21.0
 
       - name: Lint source and scripts
-        run: ruff check src scripts
+        run: ruff check --extend-select W291,W293 src scripts tests
 
       - name: Check Python syntax
-        run: python -m compileall -q src scripts
+        run: python -m compileall -q src scripts tests
+
+      - name: Check pipeline command help
+        run: python scripts/run_pipeline.py --help
+
+      - name: Run offline unit checks
+        run: python -m unittest discover -s tests -v
+
+      - name: Check Telegram chunking with a mock bot
+        run: python scripts/test_telegram_logic.py
