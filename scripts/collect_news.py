@@ -21,6 +21,21 @@ from src.utils.logger import get_logger
 logger = get_logger(__name__)
 
 
+def run_collection(config_path: str | None = None, output_dir_path: str | None = None) -> None:
+    """
+    Main orchestration function for news collection.
+    """
+    # Load config
+    config = PlatformConfig.load(config_path)
+    output_dir = Path(output_dir_path) if output_dir_path else None
+
+    # Collect
+    logger.info("Starting news collection...")
+    collector = NewsCollector(config)
+    articles = collector.collect(output_dir=output_dir)
+    logger.info("Collection complete — %d articles saved.", len(articles))
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Collect news articles from all configured sources.",
@@ -39,15 +54,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    # Load config
-    config = PlatformConfig.load(args.config)
-    output_dir = Path(args.output_dir) if args.output_dir else None
-
-    # Collect
-    logger.info("Starting news collection...")
-    collector = NewsCollector(config)
-    articles = collector.collect(output_dir=output_dir)
-    logger.info("Collection complete — %d articles saved.", len(articles))
+    run_collection(args.config, args.output_dir)
 
 
 if __name__ == "__main__":
