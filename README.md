@@ -8,17 +8,23 @@ The platform collects news from configured RSS feeds and NewsAPI, preprocesses a
 
 ## Architecture
 
-1. **Ingestion** — `src/ingestion/` collects and stores raw articles.
-2. **Processing** — `src/data/` cleans articles and builds a Hugging Face dataset.
-3. **Inference** — `src/inference/` sends task prompts to the local Bonsai runtime.
-4. **Model experiments** — `src/training/` contains optional experimental training code.
+- ✅ **Phase 1: Ingestion Layer**: Robust collection from NewsAPI and custom RSS feeds.
+- ✅ **Phase 2: Data Preprocessing**: HTML cleaning and Hugging Face Dataset integration.
+- ✅ **Phase 3: Intelligence Layer**: Inference engine with structured prompt templates.
+- 🧪 **Phase 4: Model Experiments**: Tiny-model and training scaffolding exists; model training is experimental and not part of the daily pipeline.
+- ✅ **Phase 5: Aggregation & Reporting**: Basic aggregation and Markdown report generation.
+- ✅ **Phase 6: Telegram Delivery**: Message and file delivery to a configured Telegram chat.
+- ✅ **Phase 7: Pipeline Orchestration**: Single-command local execution. GitHub scheduling and the Kali runner are still planned.
 
 ## Requirements
 
-- Python 3.11 or newer and Poetry
-- A local `llama.cpp` server build with Bonsai 2 support
-- A Bonsai GGUF model kept outside the repository
-- Optional NewsAPI credentials
+1.  **Ingestion**: `src/ingestion/` - Fetches articles and saves daily raw JSON.
+2.  **Processing**: `src/data/` - Cleans raw data and manages the `NewsDataset`.
+3.  **Inference**: `src/inference/` - Orchestrates LLM analysis (Mistral-7B).
+4.  **Model Experiments**: `src/training/` - Optional training experiments, separate from the daily inference path.
+5.  **Reporting**: `src/reporting/` - Aggregates article analyses into themes and formats reports.
+6.  **Delivery**: `src/delivery/` - Sends intelligence reports via Telegram.
+7.  **Utility**: `src/utils/` - Centralized config and logging.
 
 The configured baseline is **Bonsai 2 2B Q2_0**, selected to keep inference practical on the 4 GB GTX 1050 Ti planned for release execution. Its weights are approximately 0.55 GB; total runtime memory also depends on context size and backend. Bonsai 2 9B can be evaluated on the RX 6700 XT machine, but it is not the release target.
 
