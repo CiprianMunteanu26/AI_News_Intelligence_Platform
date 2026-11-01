@@ -10,6 +10,16 @@ paths:
   reports_dir: "reports"
 
 ingestion:
+  enrich_article_bodies: true
+  article_body_min_characters: 500
+  article_fetch_timeout_seconds: 10
+  max_article_page_fetches: 10
+  article_domains:
+    - "bbc.com"
+    - "bbc.co.uk"
+    - "nytimes.com"
+    - "reuters.com"
+    - "theguardian.com"
   sources:
     - type: "newsapi"
       enabled: true
@@ -51,12 +61,13 @@ training:
 inference:
   runtime_url: "http://127.0.0.1:8080/v1"
   batch_size: 8
-  max_new_tokens: 512
+  max_new_tokens: 192
   temperature: 0.7
   top_p: 0.8
   presence_penalty: 1.5
   timeout_seconds: 300
   enable_thinking: false
+  minimum_body_characters: 500
   tasks:
     - "summarize"
     - "sentiment"

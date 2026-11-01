@@ -20,7 +20,7 @@ class BonsaiRuntime:
     def __init__(
         self,
         base_url: str = "http://127.0.0.1:8080/v1",
-        max_new_tokens: int = 512,
+        max_new_tokens: int = 192,
         temperature: float = 0.7,
         top_p: float = 0.8,
         presence_penalty: float = 1.5,

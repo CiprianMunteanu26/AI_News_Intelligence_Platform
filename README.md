@@ -65,7 +65,11 @@ poetry run python scripts/preprocess_data.py --config config/pipeline_config.yam
 poetry run python scripts/analyze_news.py --config config/pipeline_config.yaml --limit 3
 ```
 
-The analysis command uses Bonsai by default and writes results under `data/analysis/`. Start the local model server before running it. `--tiny` selects the small Transformers fallback instead of Bonsai; it may download model files and is not the production inference path.
+The preprocessing command builds `latest_news_dataset` from only the most recently modified JSON collection in `data/raw/`; it does not combine old collections. Run collection before preprocessing so this points at the current run. The analysis command uses Bonsai by default and writes results under `data/analysis/`. Start the local model server before running it. `--tiny` selects the small Transformers fallback instead of Bonsai; it may download model files and is not the production inference path.
+
+Collection can fill short RSS or NewsAPI excerpts from the publisher page when its HTTPS hostname matches `ingestion.article_domains`. Fetches have a 10-second timeout, are limited to 10 pages per source, follow at most three HTTPS redirects that remain on configured domains, and read at most 2 MiB per page. The original feed excerpt is retained in article metadata. Adjust or disable this behavior in `config/pipeline_config.yaml`; pages outside the allowlist remain snippets.
+
+Analysis abstains without making model calls when an article body is shorter than `inference.minimum_body_characters` (500 by default). Task prompts request concise, evidence-based formats; analysis results remove explicit `<think>` blocks and reject malformed sentiment or impact responses instead of storing them.
 
 ## Offline checks
 

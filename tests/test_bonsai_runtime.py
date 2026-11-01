@@ -30,7 +30,7 @@ class BonsaiRuntimeTests(unittest.TestCase):
         response = Mock(ok=True)
         response.json.return_value = {"choices": [{"message": {"content": "A concise summary."}}]}
         runtime = BonsaiRuntime()
-        analyzer = NewsAnalyzer(runtime, tasks=["summarize"])
+        analyzer = NewsAnalyzer(runtime, tasks=["summarize"], minimum_body_characters=1)
         article = {"title": "Local model test", "body": "A fixture article.", "url": "https://example.com"}
 
         with patch.object(runtime._session, "post", return_value=response) as post:

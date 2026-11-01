@@ -81,7 +81,11 @@ def run_analysis(
         )
 
     # 3. Initialize analyzer
-    analyzer = NewsAnalyzer(engine, tasks=config.inference.tasks)
+    analyzer = NewsAnalyzer(
+        engine,
+        tasks=config.inference.tasks,
+        minimum_body_characters=config.inference.minimum_body_characters,
+    )
 
     # 4. Load dataset
     dataset = NewsDataset.load(processed_dataset_path)

@@ -17,7 +17,8 @@ class PromptTests(unittest.TestCase):
     def test_sentiment_prompt_uses_aggregator_labels(self) -> None:
         prompt = build_prompt("sentiment", "Test title", "Article body")
 
-        self.assertIn("[Positive, Negative, Neutral]", prompt)
+        self.assertIn("Options: [Positive, Negative, Neutral]", prompt)
+        self.assertIn("Sentiment: <Positive|Negative|Neutral>", prompt)
         self.assertNotIn("Bullish", prompt)
         self.assertNotIn("Bearish", prompt)
 

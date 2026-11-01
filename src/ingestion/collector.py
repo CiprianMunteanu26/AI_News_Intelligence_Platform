@@ -11,6 +11,7 @@ import json
 from datetime import UTC, datetime
 from pathlib import Path
 
+from src.ingestion.article_body import ArticleBodyFetcher
 from src.ingestion.base_source import Article, NewsSource
 from src.ingestion.newsapi_source import NewsAPISource
 from src.ingestion.rss_source import RSSSource
@@ -79,8 +80,16 @@ class NewsCollector:
     def _build_sources(self) -> list[NewsSource]:
         """Instantiate sources from config."""
         sources: list[NewsSource] = []
+        ingestion_config = self._config.ingestion
+        body_fetcher = None
+        if ingestion_config.enrich_article_bodies:
+            body_fetcher = ArticleBodyFetcher(
+                allowed_domains=ingestion_config.article_domains,
+                minimum_characters=ingestion_config.article_body_min_characters,
+                timeout_seconds=ingestion_config.article_fetch_timeout_seconds,
+            )
 
-        for src_cfg in self._config.ingestion.sources:
+        for src_cfg in ingestion_config.sources:
             if not src_cfg.enabled:
                 continue
 
@@ -94,11 +103,19 @@ class NewsCollector:
                         categories=src_cfg.categories,
                         country=src_cfg.country,
                         page_size=src_cfg.page_size,
+                        body_fetcher=body_fetcher,
+                        max_article_page_fetches=ingestion_config.max_article_page_fetches,
                     )
                 )
 
             elif src_cfg.type == "rss":
-                sources.append(RSSSource(feed_urls=src_cfg.feeds))
+                sources.append(
+                    RSSSource(
+                        feed_urls=src_cfg.feeds,
+                        body_fetcher=body_fetcher,
+                        max_article_page_fetches=ingestion_config.max_article_page_fetches,
+                    )
+                )
 
             else:
                 logger.warning("Unknown source type '%s' — skipping", src_cfg.type)
