@@ -27,7 +27,12 @@ class NewsDataset:
         self.dataset = dataset
 
     @classmethod
-    def from_json_files(cls, input_dir: Path, preprocessor: NewsPreprocessor | None = None) -> NewsDataset:
+    def from_json_files(
+        cls,
+        input_dir: Path,
+        preprocessor: NewsPreprocessor | None = None,
+        latest_only: bool = False,
+    ) -> NewsDataset:
         """
         Create a dataset from raw JSON files in a directory.
 
@@ -37,6 +42,8 @@ class NewsDataset:
             Directory containing daily JSON files.
         preprocessor : NewsPreprocessor, optional
             Preprocessor to apply to each article.
+        latest_only : bool, default False
+            Load only the most recently modified JSON file.
 
         Returns
         -------
@@ -49,6 +56,11 @@ class NewsDataset:
         if not json_files:
             logger.warning("No JSON files found in %s", input_dir)
             return cls(Dataset.from_dict({"title": [], "body": [], "url": [], "source": [], "published_at": []}))
+
+        if latest_only:
+            latest_file = max(json_files, key=lambda filepath: filepath.stat().st_mtime)
+            json_files = [latest_file]
+            logger.info("Loading latest raw collection file: %s", latest_file)
 
         for filepath in json_files:
             try:

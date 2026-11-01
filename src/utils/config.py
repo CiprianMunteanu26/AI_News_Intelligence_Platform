@@ -60,6 +60,13 @@ class IngestionSourceConfig:
 @dataclass
 class IngestionConfig:
     sources: list[IngestionSourceConfig] = field(default_factory=list)
+    enrich_article_bodies: bool = True
+    article_body_min_characters: int = 500
+    article_fetch_timeout_seconds: int = 10
+    max_article_page_fetches: int = 10
+    article_domains: list[str] = field(
+        default_factory=lambda: ["bbc.com", "bbc.co.uk", "nytimes.com", "reuters.com", "theguardian.com"]
+    )
 
 
 @dataclass
@@ -72,7 +79,6 @@ class PreprocessingConfig:
 
 @dataclass
 class TrainingConfig:
-    model_name: str = "mistralai/Mistral-7B-Instruct-v0.2"
     use_lora: bool = True
     lora_r: int = 16
     lora_alpha: int = 32
@@ -88,9 +94,15 @@ class TrainingConfig:
 
 @dataclass
 class InferenceConfig:
+    runtime_url: str = "http://127.0.0.1:8080/v1"
     batch_size: int = 8
-    max_new_tokens: int = 512
-    temperature: float = 0.3
+    max_new_tokens: int = 192
+    temperature: float = 0.7
+    top_p: float = 0.8
+    presence_penalty: float = 1.5
+    timeout_seconds: int = 300
+    enable_thinking: bool = False
+    minimum_body_characters: int = 500
     tasks: list[str] = field(default_factory=lambda: ["summarize", "sentiment", "impact", "entities"])
 
 
@@ -170,10 +182,7 @@ class PlatformConfig:
             telegram_chat_id=os.getenv("TELEGRAM_CHAT_ID", ""),
         )
 
-        # Env override for model name
-        env_model = os.getenv("MODEL_NAME")
-        if env_model:
-            cfg.training.model_name = env_model
+        cfg.inference.runtime_url = os.getenv("BONSAI_RUNTIME_URL", cfg.inference.runtime_url)
 
         # Resolve & ensure paths
         cfg.paths.resolve(PROJECT_ROOT)
@@ -198,4 +207,14 @@ def _build_ingestion(data: dict) -> IngestionConfig:
     sources = []
     for src in data.get("sources", []):
         sources.append(_build(IngestionSourceConfig, src))
-    return IngestionConfig(sources=sources)
+
+    ingestion_fields = {key: value for key, value in data.items() if key != "sources"}
+    return IngestionConfig(sources=sources, **_valid_dataclass_values(IngestionConfig, ingestion_fields))
+
+
+def _valid_dataclass_values(cls: type, data: dict) -> dict:
+    """Keep only configuration keys accepted by a dataclass."""
+    import dataclasses
+
+    valid_keys = {item.name for item in dataclasses.fields(cls)}
+    return {key: value for key, value in data.items() if key in valid_keys}

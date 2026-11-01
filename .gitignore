@@ -22,12 +22,14 @@ venv/
 *.bin
 *.pt
 *.safetensors
+*.gguf
 data/raw/
 data/processed/
 data/analysis/
 
 # Model checkpoints
 checkpoints/
+models/
 
 # Experiments
 experiments/

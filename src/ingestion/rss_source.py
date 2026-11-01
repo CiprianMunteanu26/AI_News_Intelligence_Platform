@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import feedparser
 
+from src.ingestion.article_body import ArticleBodyFetcher
 from src.ingestion.base_source import Article, NewsSource
 from src.utils.logger import get_logger
 
@@ -25,8 +26,15 @@ class RSSSource(NewsSource):
         List of RSS/Atom feed URLs to parse.
     """
 
-    def __init__(self, feed_urls: list[str] | None = None) -> None:
+    def __init__(
+        self,
+        feed_urls: list[str] | None = None,
+        body_fetcher: ArticleBodyFetcher | None = None,
+        max_article_page_fetches: int = 10,
+    ) -> None:
         self._feed_urls = feed_urls or []
+        self._body_fetcher = body_fetcher
+        self._max_article_page_fetches = max_article_page_fetches
 
     # ------------------------------------------------------------------
     # NewsSource interface
@@ -38,10 +46,11 @@ class RSSSource(NewsSource):
     def fetch_articles(self) -> list[Article]:
         """Parse all configured feeds and return standardized articles."""
         articles: list[Article] = []
+        page_fetches = [0]
 
         for url in self._feed_urls:
             try:
-                feed_articles = self._parse_feed(url)
+                feed_articles = self._parse_feed(url, page_fetches)
                 articles.extend(feed_articles)
             except Exception:
                 logger.exception("Failed to parse RSS feed: %s", url)
@@ -52,8 +61,10 @@ class RSSSource(NewsSource):
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
-    def _parse_feed(self, feed_url: str) -> list[Article]:
+    def _parse_feed(self, feed_url: str, page_fetches: list[int] | None = None) -> list[Article]:
         """Parse a single RSS/Atom feed URL."""
+        if page_fetches is None:
+            page_fetches = [0]
         feed = feedparser.parse(feed_url)
 
         if feed.bozo and not feed.entries:
@@ -66,6 +77,13 @@ class RSSSource(NewsSource):
         for entry in feed.entries:
             article = self._entry_to_article(entry, feed_title, feed_url)
             if article:
+                if (
+                    self._body_fetcher
+                    and page_fetches[0] < self._max_article_page_fetches
+                    and self._body_fetcher.is_candidate(article)
+                ):
+                    page_fetches[0] += 1
+                    article = self._body_fetcher.enrich(article)
                 articles.append(article)
 
         return articles

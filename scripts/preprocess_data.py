@@ -1,7 +1,7 @@
 """
 Script to run the news article preprocessing pipeline.
 
-Loads raw articles from data/raw, cleans them using NewsPreprocessor,
+Loads the latest raw collection from data/raw, cleans it using NewsPreprocessor,
 and saves the result as a NewsDataset in data/processed.
 """
 
@@ -40,7 +40,7 @@ def run_preprocessing(config_path: str | None = None) -> None:
     preprocessor = NewsPreprocessor()
 
     # 3. Load and preprocess articles into a NewsDataset
-    dataset = NewsDataset.from_json_files(raw_dir, preprocessor=preprocessor)
+    dataset = NewsDataset.from_json_files(raw_dir, preprocessor=preprocessor, latest_only=True)
 
     if len(dataset) == 0:
         logger.warning("No articles were found/processed. Skipping save.")

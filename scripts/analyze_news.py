@@ -18,7 +18,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src.data.dataset import NewsDataset
 from src.inference.analyzer import NewsAnalyzer
+from src.inference.bonsai_runtime import BonsaiRuntime
 from src.inference.engine import InferenceEngine
+from src.inference.protocols import TextGenerator
 from src.models.factory import ModelFactory
 from src.utils.config import PlatformConfig
 from src.utils.logger import get_logger
@@ -26,7 +28,12 @@ from src.utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-def run_analysis(config_path: str | None = None, limit: int | None = None, use_tiny: bool = False) -> None:
+def run_analysis(
+    config_path: str | None = None,
+    limit: int | None = None,
+    use_tiny: bool = False,
+    check_runtime: bool = False,
+) -> None:
     """
     Main orchestration function for intelligence analysis.
     """
@@ -41,27 +48,46 @@ def run_analysis(config_path: str | None = None, limit: int | None = None, use_t
     logger.info("Dataset path: %s", processed_dataset_path)
     logger.info("Output dir: %s", analysis_dir)
 
+    if use_tiny and check_runtime:
+        raise ValueError("--check-runtime cannot be combined with --tiny.")
+
+    engine: TextGenerator
+    if not use_tiny:
+        engine = BonsaiRuntime(
+            base_url=config.inference.runtime_url,
+            max_new_tokens=config.inference.max_new_tokens,
+            temperature=config.inference.temperature,
+            top_p=config.inference.top_p,
+            presence_penalty=config.inference.presence_penalty,
+            timeout_seconds=config.inference.timeout_seconds,
+            enable_thinking=config.inference.enable_thinking,
+        )
+        if check_runtime:
+            engine.check_health()
+            return
+
+    if not processed_dataset_path.exists():
+        raise FileNotFoundError(f"Processed dataset not found at {processed_dataset_path}. Run preprocessing first.")
+
     # 2. Load model
     if use_tiny:
         model, tokenizer = ModelFactory.load_tiny_fallback()
-    else:
-        model, tokenizer = ModelFactory.load_model(
-            config.training.model_name,
-            use_half_precision=config.training.fp16,
-            load_in_4bit=False,  # Can be toggled if needed
+        engine = InferenceEngine(
+            model,
+            tokenizer,
+            max_new_tokens=config.inference.max_new_tokens,
+            temperature=config.inference.temperature,
+            top_p=config.inference.top_p,
         )
 
-    # 3. Initialize engine and analyzer
-    engine = InferenceEngine(
-        model, tokenizer, max_new_tokens=config.inference.max_new_tokens, temperature=config.inference.temperature
+    # 3. Initialize analyzer
+    analyzer = NewsAnalyzer(
+        engine,
+        tasks=config.inference.tasks,
+        minimum_body_characters=config.inference.minimum_body_characters,
     )
-    analyzer = NewsAnalyzer(engine, tasks=config.inference.tasks)
 
     # 4. Load dataset
-    if not processed_dataset_path.exists():
-        logger.error("Processed dataset not found at %s. Run preprocessing first.", processed_dataset_path)
-        return
-
     dataset = NewsDataset.load(processed_dataset_path)
 
     # 5. Run analysis
@@ -95,12 +121,17 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="AI News Platform - Intelligence Analysis")
     parser.add_argument("--config", type=str, help="Path to pipeline_config.yaml")
     parser.add_argument("--limit", type=int, help="Limit the number of articles to analyze")
-    parser.add_argument("--tiny", action="store_true", help="Use tiny fallback model for testing")
+    parser.add_argument("--tiny", action="store_true", help="Use the tiny Transformers fallback instead of Bonsai")
+    parser.add_argument(
+        "--check-runtime",
+        action="store_true",
+        help="Check that the configured local Bonsai llama.cpp server is ready, then exit",
+    )
 
     args = parser.parse_args()
 
     try:
-        run_analysis(args.config, args.limit, args.tiny)
+        run_analysis(args.config, args.limit, args.tiny, args.check_runtime)
     except Exception:
         logger.exception("Analysis pipeline failed")
         sys.exit(1)

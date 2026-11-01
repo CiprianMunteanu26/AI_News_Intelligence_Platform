@@ -11,6 +11,7 @@ from typing import Any
 
 import requests
 
+from src.ingestion.article_body import ArticleBodyFetcher
 from src.ingestion.base_source import Article, NewsSource
 from src.utils.logger import get_logger
 
@@ -46,11 +47,15 @@ class NewsAPISource(NewsSource):
         categories: list[str] | None = None,
         country: str = "us",
         page_size: int = 50,
+        body_fetcher: ArticleBodyFetcher | None = None,
+        max_article_page_fetches: int = 10,
     ) -> None:
         self._api_key = api_key
         self._categories = categories or ["technology", "business"]
         self._country = country
         self._page_size = min(page_size, 100)
+        self._body_fetcher = body_fetcher
+        self._max_article_page_fetches = max_article_page_fetches
 
     # ------------------------------------------------------------------
     # NewsSource interface
@@ -62,6 +67,7 @@ class NewsAPISource(NewsSource):
     def fetch_articles(self) -> list[Article]:
         """Fetch top headlines across all configured categories."""
         articles: list[Article] = []
+        page_fetches = 0
 
         for category in self._categories:
             try:
@@ -69,6 +75,13 @@ class NewsAPISource(NewsSource):
                 for item in raw:
                     article = self._to_article(item, category)
                     if article:
+                        if (
+                            self._body_fetcher
+                            and page_fetches < self._max_article_page_fetches
+                            and self._body_fetcher.is_candidate(article)
+                        ):
+                            page_fetches += 1
+                            article = self._body_fetcher.enrich(article)
                         articles.append(article)
             except Exception:
                 logger.exception("Failed to fetch category '%s' from NewsAPI", category)
